@@ -1,19 +1,14 @@
-import itertools
-import warnings
-from collections import defaultdict
 from typing import List, Union
 
 import h5py
 import numpy as np
 import pandas as pd
 
-from FGG.input_data import PersonIDHandler
-
 
 class TrackCollection(object):
 
     @staticmethod
-    def from_hdf5_track_file(track_file, person_id_handler: PersonIDHandler, crop_idx=4,
+    def from_hdf5_track_file(track_file, person_id_handler: "PersonIDHandler", crop_idx=4,
                              tracks_header="Tracks", features_header="features_vgg",
                              label_header="label", num_frames_header="numframes",
                              tracker_id_header="trackerId", frames_header="frames"):
@@ -35,7 +30,7 @@ class TrackCollection(object):
                     except AttributeError:
                         result.append(read_str(tracks, col[row][0]))
                 else:
-                    result.append(tracks[col[row][0]].value.astype(dtype))
+                    result.append(tracks[col[row][0]][()].astype(dtype))
             try:
                 return np.asarray(result).squeeze()
             except ValueError:
@@ -48,12 +43,15 @@ class TrackCollection(object):
         frames = extract_column(tracks, frames_header, dtype=np.uint32)
         start_frames, end_frames = zip(*map(lambda fs: (fs.min(), fs.max()), frames))
 
-        data = pd.DataFrame({"label": extract_column(tracks, label_header),
-                             "start_frame": start_frames,
+        data = pd.DataFrame({"start_frame": start_frames,
                              "end_frame": end_frames,
                              "numframes": extract_column(tracks, num_frames_header, np.uint32),
                              "tracker_id": extract_column(tracks, tracker_id_header, np.uint32)
                              })
+        if label_header is not None:
+            data["label"] = extract_column(tracks, label_header)
+        else:
+            data["label"] = None
         i = 0
         print("Loading VGG2 features, this may take a while...")
         features = f_tracks.get(features_header)
@@ -90,7 +88,7 @@ class TrackCollection(object):
         return TrackCollection(tracks=track_list, features=required_features,
                                person_id_handler=person_id_handler)
 
-    def __init__(self, tracks: List["Track"], features: np.ndarray, person_id_handler: PersonIDHandler):
+    def __init__(self, tracks: List["Track"], features: np.ndarray, person_id_handler: "PersonIDHandler"):
         self.tracks = tracks
         self.last_frame_with_track = max(track.end_frame for track in self)
         self.features = features
@@ -117,27 +115,6 @@ class TrackCollection(object):
         for track, prediction in zip(self, predicted_labels):
             track.predicted_label = self.person_id_handler.main_characters[prediction]
 
-    def falsely_classified_tracks(self):
-        if self.feature_embedding is None:
-            warnings.warn("Requested tracks that have been misclassified, but not classifications provided.")
-            return []
-        misclassifieds = defaultdict(list)
-        for track in self:
-            if track.label != track.predicted_label:
-                misclassifieds[(track.tracker_id, track.label)].append(track.predicted_label)
-        return misclassifieds
-
-    def cooccurrence_matrix(self):
-        mat = np.zeros((self.person_id_handler.num_characters, self.person_id_handler.num_characters))
-        for t1, t2 in itertools.combinations(self.tracks, 2):
-            if t1.overlaps(t2):
-                idx = self.person_id_handler.main_characters.index(
-                    t1.label), self.person_id_handler.main_characters.index(t2.label)
-
-                mat[idx[0], idx[1]] += 1
-                mat[idx[1], idx[0]] += 1
-        return mat
-
     def output_features(self, output_file):
         if self.feature_embedding is None:
             raise RuntimeError("Can not output feature embedding: not computed.")
@@ -146,8 +123,10 @@ class TrackCollection(object):
             info = f.create_group("Tracks")
             tracker_id, label, start_frame, end_frame, predicted_label, subtrack_id = zip(
                 *[track.h5_info() for track in self.tracks])
+
             info.create_dataset("tracker_id", data=np.array(tracker_id))
-            info.create_dataset("label", data=np.array(label))
+            if not all(x is None for x in label):
+                info.create_dataset("label", data=np.array(label))
             info.create_dataset("start_frame", data=np.array(start_frame))
             info.create_dataset("end_frame", data=np.array(end_frame))
             info.create_dataset("subtrack_id", data=np.array(subtrack_id))
@@ -168,13 +147,17 @@ class Track(object):
         assert len(self) == len(self.feat_indices), f"{str(self)}, {len(self)}, {len(self.feat_indices)}"
 
     def h5_info(self):
-        return self.tracker_id, self.label.encode(
-            "utf-8"), self.start_frame, self.end_frame, self.predicted_label.encode("utf-8"), self.subtrack_id
+
+        try:
+            label = self.label.encode("utf-8")
+        except AttributeError:
+            label = None
+        return self.tracker_id, label, self.start_frame, self.end_frame, self.predicted_label.encode("utf-8"), self.subtrack_id
 
     def __str__(self):
         return f"Track {self.tracker_id}({self.subtrack_id if self.subtrack_id is not None else ''}) - {self.label}({self.predicted_label or ''}):" \
-               f" frames [{self.start_frame},{self.end_frame}]" \
-               f" feature rows [{min(self.feat_indices)}, {max(self.feat_indices)}]"
+            f" frames [{self.start_frame},{self.end_frame}]" \
+            f" feature rows [{min(self.feat_indices)}, {max(self.feat_indices)}]"
 
     def __lt__(self, other):
         # Make tracks sortable by tracker ID so we can iterate over the graph notes in a fixed order

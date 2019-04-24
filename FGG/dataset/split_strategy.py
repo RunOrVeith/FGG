@@ -3,7 +3,7 @@ from typing import Union, Optional
 
 import numpy as np
 
-from FGG.tracks import Track
+from FGG.dataset.tracks import Track
 
 
 class SplitStrategy(object, metaclass=abc.ABCMeta):

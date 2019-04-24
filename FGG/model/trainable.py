@@ -2,7 +2,7 @@ from typing import Sequence
 import torch
 import torch.nn.functional as F
 
-from egraph.learning.layers import ResidualGraphConvolution, GraphConvolution
+from FGG.model.layers import ResidualGraphConvolution, GraphConvolution
 
 
 class GCN(torch.nn.Module):
@@ -37,10 +37,22 @@ class GCN(torch.nn.Module):
 
 class FGG(torch.nn.Module):
 
-    def __init__(self, in_feature_size: int=2048, downsample_feature_size: int=1024,
-                 gc_feature_sizes: Sequence[int]=(512, 256, 128),
-                 num_edge_types: int=2,
+    def __init__(self, in_feature_size: int = 2048, downsample_feature_size: int = 1024,
+                 gc_feature_sizes: Sequence[int] = (512, 256, 128),
+                 num_edge_types: int = 2,
                  activation=F.elu, use_residual=True, sparse_adjacency=True):
+        """
+
+        :param in_feature_size: Number of input features
+        :param downsample_feature_size: Output feature size after the first linear layer.
+        :param gc_feature_sizes: Progression of feature sizes for resGC layers.
+                                 Will create as many layers as there are numbers here.
+        :param num_edge_types: The number of edge types. 2 should be fine.
+        :param activation: Activation function to use.
+        :param use_residual: If False use normal GC layers instead of residual layers.
+        :param sparse_adjacency: Whether to multiply using sparse adjacency matrices.
+                                 This saves some memory, but is still not very efficient.
+        """
         super().__init__()
         self.activation = activation
         self.downsample = torch.nn.Linear(in_features=in_feature_size, out_features=downsample_feature_size, bias=True)
@@ -50,5 +62,6 @@ class FGG(torch.nn.Module):
     def forward(self, features, adjacency_matrix):
         features = self.downsample(features)
         features = self.activation(features)
-        features = self.gcn(features=features, adjacency_matrix=adjacency_matrix)[-1]  # The GCN returns the output of all layers
+        # The GCN returns the output of all layers
+        features = self.gcn(features=features, adjacency_matrix=adjacency_matrix)[-1]
         return features

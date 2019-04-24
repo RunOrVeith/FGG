@@ -1,71 +1,27 @@
 import abc
-from collections.__init__ import Counter
 from pathlib import Path
 import warnings
 from typing import Union, List, Tuple
 import numpy as np
 from functools import lru_cache
 
-from FGG.tracks import TrackCollection
+from FGG.dataset.person_id_handler import PersonIDHandler
+from FGG.dataset.tracks import TrackCollection
 
 
 def get_data_base_path() -> Path:
     """
     :return: Base Path to where the datasets are stored.
     """
-    return Path(__file__).parent.parent / "/datasets"
-
-
-class PersonIDHandler(object):
-    unknown_key = "unknown"
-
-    def __init__(self, main_characters: List[str], include_unknown=False):
-        """
-        Handles the overview over labels and person selection based on the selected characters.
-        :param main_characters: The names of the selected characters.
-        :param include_unknown: If True, all characters not in the main characters will be assigned a special
-                                "unknown" class.
-                                Otherwise they are excluded.
-        """
-        self.track_labels = []
-        self.main_characters = main_characters
-        self.include_unknown = include_unknown
-        if include_unknown:
-            self.main_characters.append(self.unknown_key)
-
-    @property
-    def num_characters(self):
-        return len(self.main_characters)
-
-    def __contains__(self, character):
-        return self._map_name(character.lower()) in self.main_characters
-
-    def get_distribution_of_persons(self, tracks: TrackCollection):
-        labels = [track.label for track in tracks]
-        counts = Counter(labels)
-        labels = {key: counts.get(key) or 0 for key in self.main_characters}
-        unknown_persons = [character for character in counts.keys() if character not in self.main_characters]
-        unknowns = [counts.get(character) for character in unknown_persons]
-        labels[self.unknown_key] = sum(unknowns)
-        try:
-            total_labels = sum(labels.values())
-        except TypeError as e:
-            raise ValueError("No labels in the validation set!") from e
-        labels = {key: (val, val / total_labels) for key, val in labels.items()}
-        return labels, {self.unknown_key: unknown_persons}
-
-    def __getitem__(self, item: str):
-        return self._map_name(item.lower())
-
-    def _map_name(self, name_lower_case: str):
-        return name_lower_case if name_lower_case in self.main_characters else self.unknown_key
+    #return Path(__file__).parent.parent / "/datasets"
+    return Path("/home/veith/data/masterarbeit-data/formatted_data")
 
 
 class InputData(object, metaclass=abc.ABCMeta):
 
     def __init__(self, episode_index_train: Union[int, list, None], possible_episode_paths: List[Path],
-                 center_crop_idx: int, episode_index_val: Union[int, List[int], None, Ellipsis] = None,
-                 episode_index_test: Union[int, List[int], None, Ellipsis] = ...,
+                 center_crop_idx: int, episode_index_val: Union[int, List[int], None] = None,
+                 episode_index_test: Union[int, List[int], None] = ...,
                  include_unknown: bool = False, **matfile_format):
         """
         Abstract base class for input datasets.

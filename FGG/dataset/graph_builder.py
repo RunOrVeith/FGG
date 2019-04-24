@@ -1,13 +1,15 @@
 import enum
-import numpy as np
-import networkx as nx
 from typing import Union, Optional
 import itertools
 import warnings
+
+import numpy as np
+import networkx as nx
 from scipy.spatial import distance
 
-from FGG.tracks import TrackCollection
-from FGG.split_strategy import SplitStrategy
+from FGG.dataset.tracks import TrackCollection
+from FGG.dataset.split_strategy import SplitStrategy
+from FGG.metrics.evaluation import GraphMetrics
 
 
 @enum.unique
@@ -184,33 +186,4 @@ class GraphBuilder(object):
                 print(GraphMetrics(merged_single_nodes))
                 yield merged_single_nodes, self.graph_to_track_collection(graph=merged_single_nodes, tracks=tracks)
 
-
-class GraphMetrics(object):
-
-    def __init__(self, graph: nx.Graph):
-        self.graph = graph
-
-    def __str__(self):
-        return f"Density: {self.density} #Nodes: {self.number_of_nodes} " \
-               f"#Edges: {self.number_of_edges} Edges/Node: {self.edges_per_node}"
-
-    @property
-    def density(self):
-        N = self.number_of_nodes
-        if N <= 1:
-            return 0
-        num_edges = self.number_of_edges
-        return 2 * num_edges / ((N - 1) * N)
-
-    @property
-    def edges_per_node(self):
-        return self.number_of_edges / self.number_of_nodes
-
-    @property
-    def number_of_nodes(self):
-        return nx.number_of_nodes(self.graph)
-
-    @property
-    def number_of_edges(self):
-        return nx.number_of_edges(self.graph)
 

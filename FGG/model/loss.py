@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from FGG.graph_builder import EdgeTypes
+from FGG.dataset.graph_builder import EdgeTypes
 
 
 class ContrastiveLoss(torch.nn.Module):
