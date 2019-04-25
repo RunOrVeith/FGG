@@ -19,16 +19,28 @@
     ```
 4. Get input datasets (from vivek.sharma@kit.edu?)
 
-5. Optional: Download [pretrained weights](https://drive.google.com/uc?export=download&id=120LTHw4Hcdvp7HrpWpn1ptl9bRv1H8dz) 
-    (About 150 MB unzipped). Unzip them inside the repository so they will be automatically found.
-    The weights have the following performances
+5. Optional: Download [pretrained weights](https://drive.google.com/uc?export=download&id=1VkFMpiMkYI1_SpBQ05EQjB0Y2P7vYdgr) 
+    (About 650 MB unzipped). Unzip them inside the repository so they will be automatically found.
+    The weights have the following performances (These are the best models that we found) 
+    - BBT0101: 99.79% WCP
+    - BBT0102: 99.72% WCP
+    - BBT0103: 99.64% WCP
+    - BBT0104: 99.27% WCP
+    - BBT0105: 98.80% WCP
+    - BBT0106: 93.22% WCP
+    - BF0501: 97.93% WCP
     - BF0502: 98.85% WCP
+    - BF0503: 98.71% WCP
+    - BF0504: 96.84% WCP
+    - BF0505: 97.45% WCP
+    - BF0506: 97.53% WCP 
     - ACCIO 36 clusters: 68.92% B-Cubed F-Score
     - ACCIO 40 clusters: 69.24% B-Cubed F-Score
     
 
 ## Features
-You can download the FGG features for BBT0101, BF0502 and Accio [here](https://drive.google.com/uc?export=download&id=1_vZ4TpHGVhD6Im-T6GeDr7SzC_-E9quY).
+
+You can download the FGG features for the main characters of [BF](https://drive.google.com/uc?export=download&id=1QAjeSEAEMP4vgmbj42ypFPYwqK_lxP1n), [BBT](https://drive.google.com/uc?export=download&id=1zG6J_cUsIZGm8DVqlPYo6e9sGnlHMwnf) and [Accio](https://drive.google.com/uc?export=download&id=1yhtipY3l1U-geSSqk2ikgIg0M6ZmrMEK).
 Please keep in mind that the output dimension is not the same as the input dimension (i.e. there are less FGG features)
 due to the sub-track representation.
 
