@@ -39,7 +39,6 @@ class AccioExperiment(MetaExperiment):
 
 
 class AllEpisodesExperiment(MetaExperiment):
-    done = False
 
     def __init__(self):
         super().__init__(header=(), num_runs=5 * 6)
@@ -51,28 +50,6 @@ class AllEpisodesExperiment(MetaExperiment):
         return super().modify_config(config, i)
 
 
-class TestAdditionalCharactersExperiment(TestExperiment):
-
-    def __init__(self):
-        old_buffy = Buffy.main_characters()
-        Buffy.main_characters = lambda _=None: old_buffy + ["riley", "royce", "tara", "harmony", "mort", "spike"]
-        self.bf = Buffy(episode_index_train=None, episode_index_test=1, episode_index_val=None)
-        old_bbt = BigBangTheory.main_characters()
-        BigBangTheory.main_characters = lambda _=None: old_bbt + ["kurt"]
-        self.bbt = BigBangTheory(episode_index_train=None, episode_index_val=None, episode_index_test=0)
-        super().__init__(header=("Trained on",), num_runs=2)
-
-    def modify_config(self, config: FaceGroupingConfig, i):
-        if i == 0:
-            config.dataset = self.bf
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/buffy0502/checkpoint.tar"
-        else:
-            config.dataset = self.bbt
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/bbt0101/checkpoint.tar"
-
-        return ("Main", *super().modify_config(config, i))
-
-
 class PooledExperiment(TestExperiment):
 
     def __init__(self):
@@ -80,7 +57,7 @@ class PooledExperiment(TestExperiment):
 
     def modify_config(self, config: FaceGroupingConfig, i):
         from FGG.dataset.split_strategy import SplitEveryXFrames
-        x = 20
+        x = 10
         config.graph_builder_params["split_strategy"] = SplitEveryXFrames(x=x)
         config.pool_before_clustering = True
         if i == 0:
@@ -101,12 +78,19 @@ class PooledExperiment(TestExperiment):
 class InferExperiment(InferenceExperiment):
 
     def __init__(self):
-        self.dataset = BigBangTheory()
-        super().__init__(checkpoint_file=None)
+        self.dataset = Buffy()
+        super().__init__(checkpoint_file="/tmp/bbt_checkpoint.tar")  # TODO Fill this out
 
     def modify_config(self, config: FaceGroupingConfig, i):
         config.dataset = self.dataset
-        config.train_epochs = 1
+        return super().modify_config(config, i)
+
+
+class DebugExperiment(MetaExperiment):
+
+    def modify_config(self, config: FaceGroupingConfig, i):
+        config.dataset = BigBangTheory(episode_index_train=0, episode_index_val=None, episode_index_test=None)
+        config.train_epochs = 3
         return super().modify_config(config, i)
 
 
@@ -128,11 +112,11 @@ if __name__ == '__main__':
 
             if isinstance(experiment_type, InferenceExperiment):
                 print("Running inference, assuming we don't know any labels!")
-                experiment = Runner.from_config(config)
+                experiment = Runner.from_config(config, load_from="last")
                 wcp = experiment.infer()
             elif isinstance(experiment_type, TestExperiment):
                 print("Running tests only!")
-                experiment = Runner.from_config(config, load_from=29)
+                experiment = Runner.from_config(config, load_from="last")
                 wcp = experiment.test()
             else:
                 experiment = Runner.from_config(config, load_from=None)

@@ -13,7 +13,7 @@ class ModelStorage(object):
         self.model = model
         self.optimizer = optimizer
         if Path(load_path).is_file():
-            print(f"Setting up checkpoint from {load_path}. Call any of the load_XYZ methods to load model.")
+            print(f"Setting up checkpoint from {load_path}.")
             try:
                 self.checkpoint = torch.load(load_path)
             except RuntimeError:
@@ -31,12 +31,14 @@ class ModelStorage(object):
         except ValueError:
             pass
 
+    def next_epoch(self):
+        self._current_count += 1
+
     def save(self, performance_indicator=None):
         current_state = dict(
             model_state_dict=copy.deepcopy(self.model.state_dict()),
             optimizer_state_dict=copy.deepcopy(self.optimizer.state_dict()),
         )
-        self._current_count += 1
         torch.save({(self._current_count, performance_indicator): current_state}, str(Path(self.path)))
         print("saved model with key", self._current_count, performance_indicator)
 

@@ -132,16 +132,16 @@ class Runner(object):
         return experiment
 
     def train(self, test_untrained=False):
-        performance = 0
+        performance = "unknown"
         if self.val_loader is not None and test_untrained:
             self._val_epoch(epoch=-1)
         for i in range(self.train_epochs):
+            self.model_storage.next_epoch()
             self.model.train()
             self.train_epoch(epoch=i)
             # The arguments for this are set in from_config
             if self.val_loader is not None:
                 performance = self._val_epoch(epoch=i)
-
             self.statistics.to_hdf5()
         performance = self.test() or performance
         self.model_storage.save()
@@ -294,10 +294,10 @@ class MetaExperiment(object):
                 f.write(f"{','.join(entries + [str(result), ])}\n")
 
     def create_model_name(self, config, i):
-        try:
-            return f"{Path(self.file_name).stem}_{i}_ep{config.dataset.episode_index_train + 1},{config.dataset.episode_index_val + 1}"
-        except TypeError:
-            return f"{Path(self.file_name).stem}_{i}_idx{config.dataset.episode_index_train}, {config.dataset.episode_index_val}"
+        prefix = Path(self.file_name).stem
+        if prefix is None:
+            prefix = "fgg"
+        return f"{prefix}_{i}_idx{config.dataset.episode_index_train}"
 
     def modify_config(self, config: FaceGroupingConfig, i) -> Tuple:
         try:
@@ -335,5 +335,6 @@ class InferenceExperiment(TestExperiment):
     def modify_config(self, config: FaceGroupingConfig, i):
         out = super().modify_config(config, i)
         config.dataset.matfile_format["label_header"] = None  # Disables trying to read labels
+        config.model_load_file = self.checkpoint_file
         return out
 
