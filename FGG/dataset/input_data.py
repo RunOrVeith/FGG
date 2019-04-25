@@ -13,8 +13,7 @@ def get_data_base_path() -> Path:
     """
     :return: Base Path to where the datasets are stored.
     """
-    #return Path(__file__).parent.parent / "/datasets"
-    return Path("/home/veith/data/masterarbeit-data/formatted_data")
+    return Path("data")
 
 
 class InputData(object, metaclass=abc.ABCMeta):
@@ -145,8 +144,6 @@ class InputData(object, metaclass=abc.ABCMeta):
                f"train {self.episode_index_train} val {self.episode_index_val}"
 
 
-# TODO re-store VGG datasets in given folder.
-
 class BigBangTheory(InputData):
     """
     Dataset for The Big Bang Theory.
@@ -157,7 +154,7 @@ class BigBangTheory(InputData):
     def __init__(self, episode_index_train: Union[int, slice, list, None] = 0, include_unknown=False,
                  episode_index_val=None, episode_index_test=...):
         possible_episodes = list(
-            map(lambda x: get_data_base_path() / x, [f"bbt/supervised/bbt_s01e0{i}/tracks.mat" for i in range(1, 7)])
+            map(lambda x: get_data_base_path() / x, [f"bbt/bbt010{i}/tracks.mat" for i in range(1, 7)])
         )
         super().__init__(possible_episode_paths=possible_episodes, center_crop_idx=4,
                          episode_index_train=episode_index_train, include_unknown=include_unknown,
@@ -180,7 +177,7 @@ class Buffy(InputData):
                  episode_index_val=None, episode_index_test=...):
         possible_episodes = list(
             map(lambda x: get_data_base_path() / x,
-                [f"buffy/supervised/buffy_s05e0{i}/tracks.mat" for i in range(1, 7)])
+                [f"bf/bf050{i}/tracks.mat" for i in range(1, 7)])
         )
         super().__init__(possible_episode_paths=possible_episodes, center_crop_idx=4,
                          episode_index_train=episode_index_train, include_unknown=include_unknown,
@@ -207,11 +204,12 @@ class Accio(InputData):
     def __init__(self, episode_index_train: Union[None, int, slice] = 0, num_clusters=36, include_unknown=False,
                  episode_index_val=None, episode_index_test=...):
         possible_episodes = list(
-            map(lambda x: get_data_base_path() / x, [f"hp/supervised/hp_s01e0{i}/tracks.mat" for i in range(1, 2)])
+            map(lambda x: get_data_base_path() / x, [f"accio/accio010{i}/tracks.mat" for i in range(1, 2)])
         )
         super().__init__(possible_episode_paths=possible_episodes, center_crop_idx=0,
                          episode_index_train=episode_index_train, include_unknown=include_unknown,
-                         episode_index_val=episode_index_val, label_header="groundTruthIdentity",
+                         episode_index_val=episode_index_val,
+                         label_header="groundTruthIdentity",  # Update the expected HDF5 headers
                          episode_index_test=episode_index_test)
 
         # replace num_characters with num_characters + 1 because people messed up in accio

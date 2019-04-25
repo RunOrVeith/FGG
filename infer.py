@@ -52,7 +52,7 @@ class InferBBT0101Experiment(InferenceExperiment):
 if __name__ == '__main__':
     import datetime
     from FGG.runner import Runner
-    #from FGG.persistance.run_configuration import enable_auto_run_save
+    #from FGG.persistence.run_configuration import enable_auto_run_save
 
     #enable_auto_run_save()
     experiment_type = InferBBT0101Experiment()

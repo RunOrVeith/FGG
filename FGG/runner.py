@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 from FGG.model.util import no_grad, random_seed_consistent_rng, num_trainable_parameters, l2_norm, mean_pool_tracks
 from FGG.model.clustering import agglomerative_clustering
 from FGG.dataset.dataset import EpisodeGraphDataset
-from FGG.persistance.statistics import Statistics
-from FGG.persistance.model_storage import ModelStorage
+from FGG.persistence.statistics import Statistics
+from FGG.persistence.model_storage import ModelStorage
 from FGG.metrics.visdom_base import VisdomViz
 from FGG.metrics.evaluation import ClusterMetricProvider
 from FGG.dataset.graph_builder import GraphBuilder
@@ -20,7 +20,7 @@ class Runner(object):
 
     def __init__(self, loss_function, model, optimizer, metric_provider,
                  device, statistics, model_storage, train_loader, val_loader=None, test_loader=None,
-                 train_epochs=30, store_features_to=None, pool_before_clustering=False,
+                 train_epochs=30, store_features_file=None, pool_before_clustering=False,
                  vis=None, ):
 
         self.device = device
@@ -35,7 +35,7 @@ class Runner(object):
         self.train_epochs = train_epochs
         self.vis = vis
         self.model_storage = model_storage
-        self.store_features_to = store_features_to
+        self.store_features_file = store_features_file
         self.pool_before_clustering = pool_before_clustering
 
     @staticmethod
@@ -120,8 +120,7 @@ class Runner(object):
                             test_loader=test_loader,
                             train_epochs=config.train_epochs,
                             model_storage=model_storage,
-                            store_features_to=config.store_features_to,
-                            pool_before_clustering=config.pool_before_clustering,
+                            store_features_file=config.store_features_file,
                             vis=vis)
 
         return experiment
@@ -190,6 +189,7 @@ class Runner(object):
 
             embedding = logits.cpu().numpy()
             if self.pool_before_clustering:
+                # Similarity edges will be removed from pooling as long as they are weighted != 1
                 embedding, all_targets = mean_pool_tracks(adjacency[0].cpu().numpy(), embedding, all_targets)
             prediction = self.predict(features=embedding, n_cluster=tracks.person_id_handler.num_characters)
 
@@ -207,8 +207,8 @@ class Runner(object):
             #                          prediction=prediction,
             #                          assign_clusters=self.metric_provider.cluster_assignment_function)
 
-            if self.store_features_to is not None:
-                tracks.output_features(self.store_features_to)
+            if self.store_features_file is not None:
+                tracks.output_features(self.store_features_file)
             return metrics["weighted clustering purity"]
 
     def test_multiple_episodes(self, data_loader, epoch, mode):
@@ -249,12 +249,13 @@ class Runner(object):
             logits = self.model.forward(features=features, adjacency_matrix=adjacency)
             embedding = logits.cpu().numpy()
             if self.pool_before_clustering:
+                # Similarity edges will be removed from pooling as long as they are weighted != 1
                 embedding, all_targets = mean_pool_tracks(adjacency[0].cpu().numpy(), embedding)
             prediction = self.predict(features=embedding, n_cluster=tracks.person_id_handler.num_characters)
 
             tracks.set_prediction_output(feature_embedding=embedding,
                                          predicted_labels=prediction)  # These are only the cluster assignments
 
-            if self.store_features_to is not None:
-                tracks.output_features(self.store_features_to)
+            if self.store_features_file is not None:
+                tracks.output_features(self.store_features_file)
         return "unknown"

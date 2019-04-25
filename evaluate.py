@@ -15,6 +15,8 @@ class EvalExperiment(Experiment):
         :param checkpoint_file: Checkpoint file to load weights from.
                                 The default is to look for pretrained weights in this repo in the "weights" folder
                                 depending on the selected dataset.
+                                If None evaluation will happen on randomly initialized weights.
+                                Otherwise you can provide a checkpoint file path.
         """
         self.checkpoint_file = checkpoint_file
         super().__init__(header=header, num_runs=num_runs)
@@ -24,6 +26,8 @@ class EvalExperiment(Experiment):
         assert config.dataset.episode_index_test is not None
         config.dataset.episode_index_train = None
         config.dataset.episode_index_val = None
+
+        # These are the paths for the pretrained weights.
         if isinstance(config.dataset, BigBangTheory) and self.checkpoint_file is Ellipsis:
             config.model_load_file = "weights/bbt0101/checkpoint.tar"
         elif isinstance(config.dataset, Buffy) and self.checkpoint_file is Ellipsis:
@@ -44,34 +48,12 @@ class EvalExperiment(Experiment):
             return f"{prefix}_{i}_idx{config.dataset.episode_index_test}"
 
 
-class PooledExperiment(EvalExperiment):
-
-    def __init__(self):
-        super().__init__(header=("split_frames",), num_runs=3)
-
-    def modify_config(self, config: FaceGroupingConfig, i):
-        from FGG.dataset.split_strategy import SplitEveryXFrames
-        x = 10
-        config.graph_builder_params["split_strategy"] = SplitEveryXFrames(x=x)
-        config.pool_before_clustering = True
-        if i == 0:
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/bbt0101/checkpoint.tar"
-            config.dataset = BigBangTheory(episode_index_val=None, episode_index_train=None,
-                                           episode_index_test=0)
-        elif i == 1:
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/buffy0502/checkpoint.tar"
-            config.dataset = Buffy(episode_index_val=None, episode_index_train=None,
-                                   episode_index_test=1)
-        else:
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/accio/40/checkpoint.tar"
-            config.model_params["sparse_adjacency"] = True
-            config.dataset = Accio(episode_index_test=0, episode_index_val=None, episode_index_train=None)
-        return (str(x), *super().modify_config(config, i))
-
-
 class EvaluateBBT0101BF0502Experiment(EvalExperiment):
 
     def __init__(self):
+        """
+        Perform one evaluation step on BBT0101 and BF0502 using pretrained weights.
+        """
         super().__init__(num_runs=2)
 
     def modify_config(self, config: FaceGroupingConfig, i):
@@ -83,11 +65,51 @@ class EvaluateBBT0101BF0502Experiment(EvalExperiment):
         return super().modify_config(config, i)
 
 
+class EvaluateAccioExperiment(EvalExperiment):
+    """
+    Perform one evaluation step on ACCIO using pretrained weights.
+    """
+
+    def modify_config(self, config: FaceGroupingConfig, i):
+        config.dataset = Accio()
+        config.model_params["sparse_adjacency"] = True
+        return super().modify_config(config, i)
+
+
+class PooledExperiment(EvalExperiment):
+
+    def __init__(self):
+        """
+        Warning: Experimental.
+        Allows to retrieve more features per track by splitting every x frames.
+        This creates large graphs that may result in a memory error or very long run times.
+        """
+        super().__init__(header=("split_frames",), num_runs=2)
+
+    def modify_config(self, config: FaceGroupingConfig, i):
+        from FGG.dataset.split_strategy import SplitEveryXFrames
+        x = 10
+        config.graph_builder_params["split_strategy"] = SplitEveryXFrames(x=x)
+        config.pool_before_clustering = True
+
+        if i == 0:
+            config.dataset = BigBangTheory(episode_index_val=None, episode_index_train=None,
+                                           episode_index_test=0)
+        elif i == 1:
+            config.dataset = Buffy(episode_index_val=None, episode_index_train=None,
+                                   episode_index_test=1)
+        else:
+            # This is currently disabled as it does not run on our hardware.
+            config.model_params["sparse_adjacency"] = True
+            config.dataset = Accio(episode_index_test=0, episode_index_val=None, episode_index_train=None)
+        return (str(x), *super().modify_config(config, i))
+
+
 if __name__ == '__main__':
     import datetime
     from FGG.config import FaceGroupingConfig
     from FGG.runner import Runner
-    from FGG.persistance.run_configuration import enable_auto_run_save
+    from FGG.persistence.run_configuration import enable_auto_run_save
 
     enable_auto_run_save()
     experiment_type = EvaluateBBT0101BF0502Experiment()

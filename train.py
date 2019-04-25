@@ -7,14 +7,23 @@ from FGG.dataset.input_data import Buffy, BigBangTheory, Accio
 from FGG.config import FaceGroupingConfig
 
 
-
-
 class Experiment(object):
-    out_folder = Path(__file__).parent.parent / "experiment_results"
+    out_folder = Path(__file__).parent / "experiment_results"
     if not out_folder.is_dir():
         out_folder.mkdir(exist_ok=True, parents=True)
 
     def __init__(self, header=None, num_runs=1):
+        """
+        Base experiment for serializing multiple runs.
+        Can be used for training.
+        Will output a csv file with the resulting WCP of each experiment, including the dataset name.
+        :param header: If None, no output experiment overview file will be produced.
+                       If an empty tuple, the csv file will contain the columns
+                       'dataset", "episode_train", "episode_val", "episode_test", "wcp".
+                       You can add more info for experiments by setting more headers.
+                       Be sure to supply values for the header in `modify_config`.
+        :param num_runs: How many serialized runs there should be.
+        """
         if header is None:
             self.file_name = "/dev/null"
             self.header = ""
@@ -26,6 +35,11 @@ class Experiment(object):
         self.num_runs = num_runs
 
     def next_experiment(self):
+        """
+        Generator for configs.
+        Should be sent the result WCP of the previous experiment.
+        :return:
+        """
         with open(self.file_name, "w") as f:
             f.write(f"{','.join(self.header)}\n")
         for i in range(self.num_runs):
@@ -53,9 +67,9 @@ class Experiment(object):
         except TypeError:
             val_ep = str(config.dataset.episode_index_val)
         try:
-            test_ep = str(config.dataset.episode_index_val + 1)
+            test_ep = str(config.dataset.episode_index_test + 1)
         except TypeError:
-            test_ep = str(config.dataset.episode_index_val)
+            test_ep = str(config.dataset.episode_index_test)
 
         return (config.dataset.__class__.__name__,
                 train_ep, val_ep, test_ep)
@@ -63,10 +77,13 @@ class Experiment(object):
 
 class BF0502BBT0101Experiment(Experiment):
 
-    def __init__(self, header=("changes",), num_runs=10):
+    def __init__(self, ):
+        """
+        Trains 5 runs on BF0502 and 5 runs on BBT0101.
+        """
         self.bf = Buffy(episode_index_train=1, episode_index_val=None, episode_index_test=1)
         self.bbt = BigBangTheory(episode_index_train=0, episode_index_val=None, episode_index_test=0)
-        super().__init__(header=header, num_runs=num_runs)
+        super().__init__(header=(), num_runs=10)
 
     def modify_config(self, config: FaceGroupingConfig, i):
         if i < self.num_runs / 2:
@@ -74,12 +91,16 @@ class BF0502BBT0101Experiment(Experiment):
         else:
             config.dataset = self.bbt
 
-        return ("shuffle", *super().modify_config(config, i))
+        return super().modify_config(config, i)
 
 
 class AccioExperiment(Experiment):
 
     def __init__(self):
+        """
+        Train on Accio for 5 iterations.
+        This will take a while.
+        """
         self.num_clusters = 36
         self.accio = Accio(episode_index_val=None, episode_index_test=0, num_clusters=self.num_clusters)
         super().__init__(header=("num_clusters",), num_runs=5)
@@ -87,15 +108,15 @@ class AccioExperiment(Experiment):
     def modify_config(self, config: FaceGroupingConfig, i):
         config.dataset = self.accio
         config.model_params["sparse_adjacency"] = True
-        config.graph_builder_params["pair_sample_fraction"] = 1
-        config.graph_builder_params["edge_between_top_fraction"] = 0.03
-
         return (str(self.num_clusters), *super().modify_config(config, i))
 
 
 class AllEpisodesExperiment(Experiment):
 
     def __init__(self):
+        """
+        Train on each episode of the Big Bang Theory for 5 times.
+        """
         super().__init__(header=(), num_runs=5 * 6)
 
     def modify_config(self, config, i):
@@ -105,21 +126,12 @@ class AllEpisodesExperiment(Experiment):
         return super().modify_config(config, i)
 
 
-class DebugExperiment(Experiment):
-
-    def modify_config(self, config: FaceGroupingConfig, i):
-        config.dataset = BigBangTheory(episode_index_train=0, episode_index_val=None, episode_index_test=None)
-        config.train_epochs = 3
-        return super().modify_config(config, i)
-
-
 if __name__ == '__main__':
-    from FGG.config import FaceGroupingConfig
     from FGG.runner import Runner
-    from FGG.persistance.run_configuration import enable_auto_run_save
+    from FGG.persistence.run_configuration import enable_auto_run_save
 
     enable_auto_run_save()
-    experiment_type = DebugExperiment()
+    experiment_type = BF0502BBT0101Experiment()
     meta_experiment = experiment_type.next_experiment()
     wcp = None
     while True:

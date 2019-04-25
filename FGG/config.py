@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from FGG.dataset.dataset import CompleteGraphEpisodeSampler
 from FGG.dataset.input_data import BigBangTheory
 from FGG.dataset.split_strategy import HeuristicSplit
-from FGG.persistance.run_configuration import AutoConfig
+from FGG.persistence.run_configuration import AutoConfig
 from FGG.model.trainable import FGG
 from FGG.model.loss import GraphContrastiveLoss
 from FGG.model.clustering import cluster_mode_prediction
@@ -35,6 +35,7 @@ class FaceGroupingConfig(AutoConfig):
             self.run_info_file = None
             self.model_save_file = None
             self.model_load_file = None
+            self.store_features_file = None
             self.strict = True
             self.performance_indicator = "test-weighted clustering purity"
 
@@ -47,7 +48,6 @@ class FaceGroupingConfig(AutoConfig):
             self.device = "cuda"
             self.seed = None
             self.store_base_path = Path(__file__).parent.parent / "runs"
-            self.store_features_to = None
 
         with self.argument_group("model-parameters"):
             self.model_type = FGG
@@ -65,7 +65,6 @@ class FaceGroupingConfig(AutoConfig):
                                              edge_between_top_fraction=0.03,
                                              isolates_similarity_only=True,
                                              weighted_edges=True, )
-            self.pool_before_clustering = False
 
         with self.argument_group("runtime-duration"):
             self.train_epochs = 30
@@ -81,7 +80,7 @@ class FaceGroupingConfig(AutoConfig):
         self.replay_log_file = self.output_folder / "replay_log.json"
         self.run_info_file = self.output_folder / "run_info.json"
         self.model_save_file = self.output_folder / "checkpoint.tar"
-        self.store_features_to = self.output_folder / "features.h5"
+        self.store_features_file = self.output_folder / "features.h5"
         self.output_folder.mkdir(exist_ok=True, parents=True)
 
         if self.seed is None:

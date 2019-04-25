@@ -1,8 +1,9 @@
-# Experiment results and my virtual environment
+# Experiment results, input data and my virtual environment
 runs/*
 experiment_results/*
 vfgg/*
 weights/*
+data/
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template

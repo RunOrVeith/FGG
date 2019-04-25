@@ -12,7 +12,7 @@ import requests
 import numpy as np
 import pandas as pd
 
-from FGG.persistance.statistics import Statistics
+from FGG.persistence.statistics import Statistics
 from FGG.metrics.base import to_dense_numpy
 
 
