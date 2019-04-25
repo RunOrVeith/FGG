@@ -1,12 +1,67 @@
 #! /usr/bin/env python
 import datetime
+from pathlib import Path
+from typing import Tuple
+
 from FGG.dataset.input_data import Buffy, BigBangTheory, Accio
 from FGG.config import FaceGroupingConfig
 
-from FGG.runner import MetaExperiment, TestExperiment, InferenceExperiment
 
 
-class BF0502BBT0101Experiment(MetaExperiment):
+
+class Experiment(object):
+    out_folder = Path(__file__).parent.parent / "experiment_results"
+    if not out_folder.is_dir():
+        out_folder.mkdir(exist_ok=True, parents=True)
+
+    def __init__(self, header=None, num_runs=1):
+        if header is None:
+            self.file_name = "/dev/null"
+            self.header = ""
+        else:
+            timestamp = str(datetime.datetime.now().timestamp()).split(".")[0]
+            self.file_name = self.out_folder / f"{self.__class__.__name__}_{timestamp}.csv"
+            self.header = header + ("dataset", "episode_train", "episode_val", "episode_test", "wcp",)
+
+        self.num_runs = num_runs
+
+    def next_experiment(self):
+        with open(self.file_name, "w") as f:
+            f.write(f"{','.join(self.header)}\n")
+        for i in range(self.num_runs):
+            config = FaceGroupingConfig()
+            entries = list(map(str, self.modify_config(config, i)))
+            config.model_name = self.create_model_name(config, i)
+            config.finalize()
+            result = yield config
+            with open(self.file_name, "a") as f:
+                f.write(f"{','.join(entries + [str(result), ])}\n")
+
+    def create_model_name(self, config, i):
+        prefix = Path(self.file_name).stem
+        if prefix is None:
+            prefix = "fgg"
+        return f"{prefix}_{i}_idx{config.dataset.episode_index_train}"
+
+    def modify_config(self, config: FaceGroupingConfig, i) -> Tuple:
+        try:
+            train_ep = str(config.dataset.episode_index_train + 1)
+        except TypeError:
+            train_ep = str(config.dataset.episode_index_train)
+        try:
+            val_ep = str(config.dataset.episode_index_val + 1)
+        except TypeError:
+            val_ep = str(config.dataset.episode_index_val)
+        try:
+            test_ep = str(config.dataset.episode_index_val + 1)
+        except TypeError:
+            test_ep = str(config.dataset.episode_index_val)
+
+        return (config.dataset.__class__.__name__,
+                train_ep, val_ep, test_ep)
+
+
+class BF0502BBT0101Experiment(Experiment):
 
     def __init__(self, header=("changes",), num_runs=10):
         self.bf = Buffy(episode_index_train=1, episode_index_val=None, episode_index_test=1)
@@ -22,7 +77,7 @@ class BF0502BBT0101Experiment(MetaExperiment):
         return ("shuffle", *super().modify_config(config, i))
 
 
-class AccioExperiment(MetaExperiment):
+class AccioExperiment(Experiment):
 
     def __init__(self):
         self.num_clusters = 36
@@ -38,7 +93,7 @@ class AccioExperiment(MetaExperiment):
         return (str(self.num_clusters), *super().modify_config(config, i))
 
 
-class AllEpisodesExperiment(MetaExperiment):
+class AllEpisodesExperiment(Experiment):
 
     def __init__(self):
         super().__init__(header=(), num_runs=5 * 6)
@@ -50,43 +105,7 @@ class AllEpisodesExperiment(MetaExperiment):
         return super().modify_config(config, i)
 
 
-class PooledExperiment(TestExperiment):
-
-    def __init__(self):
-        super().__init__(header=("split_frames",), num_runs=3)
-
-    def modify_config(self, config: FaceGroupingConfig, i):
-        from FGG.dataset.split_strategy import SplitEveryXFrames
-        x = 10
-        config.graph_builder_params["split_strategy"] = SplitEveryXFrames(x=x)
-        config.pool_before_clustering = True
-        if i == 0:
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/bbt0101/checkpoint.tar"
-            config.dataset = BigBangTheory(episode_index_val=None, episode_index_train=None,
-                                           episode_index_test=0)
-        elif i == 1:
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/buffy0502/checkpoint.tar"
-            config.dataset = Buffy(episode_index_val=None, episode_index_train=None,
-                                   episode_index_test=1)
-        else:
-            config.model_load_file = "/cvhci/data/PLUMCOT/AVT_Veith/veith/best_models/accio/40/checkpoint.tar"
-            config.model_params["sparse_adjacency"] = True
-            config.dataset = Accio(episode_index_test=0, episode_index_val=None, episode_index_train=None)
-        return (str(x), *super().modify_config(config, i))
-
-
-class InferExperiment(InferenceExperiment):
-
-    def __init__(self):
-        self.dataset = Buffy()
-        super().__init__(checkpoint_file="/tmp/bbt_checkpoint.tar")  # TODO Fill this out
-
-    def modify_config(self, config: FaceGroupingConfig, i):
-        config.dataset = self.dataset
-        return super().modify_config(config, i)
-
-
-class DebugExperiment(MetaExperiment):
+class DebugExperiment(Experiment):
 
     def modify_config(self, config: FaceGroupingConfig, i):
         config.dataset = BigBangTheory(episode_index_train=0, episode_index_val=None, episode_index_test=None)
@@ -100,7 +119,7 @@ if __name__ == '__main__':
     from FGG.persistance.run_configuration import enable_auto_run_save
 
     enable_auto_run_save()
-    experiment_type = InferExperiment()
+    experiment_type = DebugExperiment()
     meta_experiment = experiment_type.next_experiment()
     wcp = None
     while True:
@@ -110,16 +129,7 @@ if __name__ == '__main__':
             break
         else:
 
-            if isinstance(experiment_type, InferenceExperiment):
-                print("Running inference, assuming we don't know any labels!")
-                experiment = Runner.from_config(config, load_from="last")
-                wcp = experiment.infer()
-            elif isinstance(experiment_type, TestExperiment):
-                print("Running tests only!")
-                experiment = Runner.from_config(config, load_from="last")
-                wcp = experiment.test()
-            else:
-                experiment = Runner.from_config(config, load_from=None)
-                print(f"Starting to train model {config.model_name} at {datetime.datetime.now()}")
-                wcp = experiment.train()
+            experiment = Runner.from_config(config, load_from=None)
+            print(f"Starting to train model {config.model_name} at {datetime.datetime.now()}")
+            wcp = experiment.train()
             print(f"Finished at {datetime.datetime.now()} at {wcp} wcp")

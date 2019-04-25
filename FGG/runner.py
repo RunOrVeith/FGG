@@ -1,9 +1,5 @@
-import datetime
-import sys
 import warnings
 from functools import partial, wraps
-from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import tqdm
@@ -18,7 +14,6 @@ from FGG.persistance.model_storage import ModelStorage
 from FGG.metrics.visdom_base import VisdomViz
 from FGG.metrics.evaluation import ClusterMetricProvider
 from FGG.dataset.graph_builder import GraphBuilder
-from FGG.config import FaceGroupingConfig
 
 
 class Runner(object):
@@ -263,78 +258,3 @@ class Runner(object):
             if self.store_features_to is not None:
                 tracks.output_features(self.store_features_to)
         return "unknown"
-
-
-class MetaExperiment(object):
-    out_folder = Path(__file__).parent.parent / "experiment_results"
-    if not out_folder.is_dir():
-        out_folder.mkdir(exist_ok=True, parents=True)
-
-    def __init__(self, header=None, num_runs=1):
-        if header is None:
-            self.file_name = "/dev/null"
-            self.header = ""
-        else:
-            timestamp = str(datetime.datetime.now().timestamp()).split(".")[0]
-            self.file_name = self.out_folder / f"{self.__class__.__name__}_{timestamp}.csv"
-            self.header = header + ("dataset", "episode_train", "episode_val", "episode_test", "wcp",)
-
-        self.num_runs = num_runs
-
-    def next_experiment(self):
-        with open(self.file_name, "w") as f:
-            f.write(f"{','.join(self.header)}\n")
-        for i in range(self.num_runs):
-            config = FaceGroupingConfig()
-            entries = list(map(str, self.modify_config(config, i)))
-            config.model_name = self.create_model_name(config, i)
-            config.finalize()
-            result = yield config
-            with open(self.file_name, "a") as f:
-                f.write(f"{','.join(entries + [str(result), ])}\n")
-
-    def create_model_name(self, config, i):
-        prefix = Path(self.file_name).stem
-        if prefix is None:
-            prefix = "fgg"
-        return f"{prefix}_{i}_idx{config.dataset.episode_index_train}"
-
-    def modify_config(self, config: FaceGroupingConfig, i) -> Tuple:
-        try:
-            train_ep = str(config.dataset.episode_index_train + 1)
-        except TypeError:
-            train_ep = str(config.dataset.episode_index_train)
-        try:
-            val_ep = str(config.dataset.episode_index_val + 1)
-        except TypeError:
-            val_ep = str(config.dataset.episode_index_val)
-        try:
-            test_ep = str(config.dataset.episode_index_val + 1)
-        except TypeError:
-            test_ep = str(config.dataset.episode_index_val)
-
-        return (config.dataset.__class__.__name__,
-                train_ep, val_ep, test_ep)
-
-
-class TestExperiment(MetaExperiment):
-
-    def create_model_name(self, config, i):
-        try:
-            return f"{Path(self.file_name).stem}_{i}_ep{config.dataset.episode_index_test + 1}"
-        except TypeError:
-            return f"{Path(self.file_name).stem}_{i}_idx{config.dataset.episode_index_test}"
-
-
-class InferenceExperiment(TestExperiment):
-
-    def __init__(self, checkpoint_file: str):
-        self.checkpoint_file = checkpoint_file
-        super().__init__()
-
-    def modify_config(self, config: FaceGroupingConfig, i):
-        out = super().modify_config(config, i)
-        config.dataset.matfile_format["label_header"] = None  # Disables trying to read labels
-        config.model_load_file = self.checkpoint_file
-        return out
-

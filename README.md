@@ -19,9 +19,16 @@ pip install -r FGG/requirements.txt
 
 todo
 
-5. Optional: Download pretrained weights
+5. Optional: Download [pretrained weights](https://drive.google.com/uc?export=download&id=1eIvdtJ-d3TREpcpwXbCt3uG4sNnCanEK) 
+(About 150 MB unzipped).
+The weights have the following performances (These are slightly higher than the results in the paper because of averaging):
+    - BBT0101: 99.55% WCP
+    - BF0502: 98.85% WCP
+    - ACCIO 36 clusters: 68.92% B-Cubed F-Score
+    - ACCIO 40 clusters: 69.24% B-Cubed F-Score
+Unzip the weights 
 
-todo
+
 
 ## B-CUBED Implementation
 
