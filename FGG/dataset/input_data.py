@@ -156,7 +156,7 @@ class BigBangTheory(InputData):
         possible_episodes = list(
             map(lambda x: get_data_base_path() / x, [f"bbt/bbt010{i}/tracks.mat" for i in range(1, 7)])
         )
-        super().__init__(possible_episode_paths=possible_episodes, center_crop_idx=4,
+        super().__init__(possible_episode_paths=possible_episodes, center_crop_idx=0,
                          episode_index_train=episode_index_train, include_unknown=include_unknown,
                          episode_index_val=episode_index_val, episode_index_test=episode_index_test)
 
@@ -184,7 +184,7 @@ class Buffy(InputData):
             map(lambda x: get_data_base_path() / x,
                 [f"bf/bf050{i}/tracks.mat" for i in range(1, 7)])
         )
-        super().__init__(possible_episode_paths=possible_episodes, center_crop_idx=4,
+        super().__init__(possible_episode_paths=possible_episodes, center_crop_idx=0,
                          episode_index_train=episode_index_train, include_unknown=include_unknown,
                          episode_index_val=episode_index_val, episode_index_test=episode_index_test,)
 

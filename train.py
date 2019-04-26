@@ -153,10 +153,16 @@ if __name__ == '__main__':
     from FGG.persistence.run_configuration import enable_auto_run_save
 
     enable_auto_run_save()
+
+    # --- Train indivdual datasets (FGG 5 times) ---
     # If you want to train on BBT, uncomment:
     experiment_type = BBTExperiment()
     # If you want to train on BF, uncomment:
     #experiment_type = BFExperiment()
+    # If you want to train on Accio, uncomment
+    #experiment_type = AccioExperiment()
+
+    # -----------Or train multiple together ----------------
     # You can also train both after each other automatically:
     # experiment_type = BF0502BBT0101Experiment()
     meta_experiment = experiment_type.next_experiment()

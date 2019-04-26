@@ -27,17 +27,17 @@ Alternatively you can change the paths in `FGG/dataset/input_data.py` within eac
 5. Optional: Download [pretrained weights](https://drive.google.com/uc?export=download&id=1VkFMpiMkYI1_SpBQ05EQjB0Y2P7vYdgr) 
     (About 650 MB unzipped). Unzip them inside the repository so they will be automatically found.
     The weights have the following performances (These are the best models that we found) 
-    - BBT0101: 99.79% WCP
+    - BBT0101: 99.78% WCP
     - BBT0102: 99.72% WCP
     - BBT0103: 99.64% WCP
     - BBT0104: 99.27% WCP
     - BBT0105: 98.80% WCP
     - BBT0106: 93.22% WCP
-    - BF0501: 97.93% WCP
+    - BF0501: 97.92% WCP
     - BF0502: 98.85% WCP
     - BF0503: 98.71% WCP
-    - BF0504: 96.84% WCP
-    - BF0505: 97.45% WCP
+    - BF0504: 96.83% WCP
+    - BF0505: 97.44% WCP
     - BF0506: 97.53% WCP 
     - ACCIO 36 clusters: 68.92% B-Cubed F-Score
     - ACCIO 40 clusters: 69.24% B-Cubed F-Score
@@ -72,9 +72,10 @@ The files are of type HDF5 and follow the following format:
 You can read them with h5py.
 - Dataset "FGG_features": These are the output features of shape `|V|x128`.
 V is the number of nodes in the graph and depends on the input size track length.
-We split tracks into sub-tracks once they reach a certain length.
+We split tracks into sub-tracks once they reach a certain length,
+so the output contains one or more features for each track (temporally ordered).
 For example on Buffy Episode 6, `V=3176` for `535` full tracks.
-Please see the paper for details.
+Please see the paper Section 3.2 §Split Variants for details.
 - Group "Tracks": Contains the following  datasets. Each dataset has `|V|` rows.
     - "tracker_id": The id of the tracker to which the features belong.
     - "label": The ground-truth label. If you run  FGG on a dataset where there are no labels, this will be missing in the output file.
@@ -147,7 +148,7 @@ The following output files will be created:
   - statistics.h5: Saves the metrics of the run. Please refer to `FGG/persistence/statistics.py` for the format.
   - If you had a visdom server running, you will also receive replay_log.json with which you can recreate the visdom plots.
   
-### Evaluation
+### Evaluation & Feature Extraction
 
 The `EvalExperiment` subclass is provided for convenience to allow to only evaluate a pre-trained model
 without any further training.

@@ -152,20 +152,25 @@ if __name__ == '__main__':
     from FGG.persistence.run_configuration import enable_auto_run_save
 
     enable_auto_run_save()
+
+    # --- Single dataset evaluation ---
     # Evaluate on all episodes of BBT:
     experiment_type = EvaluateBBTExperiment()
     # Evaluate on all episodes of BF:
     # experiment_type = EvaluateBFExperiment()
-    # EValuate on all episodes of BBT and BF:
-    # experiment_type = EvaluateBBTBFExperiment()
+    # Evaluate on all episodes of BBT and BF:
+    #experiment_type = EvaluateBBTBFExperiment()
+    # Evaluate on ACCIO:
+    # experiment_type = EvaluateAccioExperiment()
 
-    # -------------------------------------------------
-    # If you want a reliable number of features, run this:
+    # --------------Extract more features per track-------------------
+    # If you want to extract feature maps with a higher number of features per track, run this:
     # It will extract a feature for every ten frames.
     # Warning: This is computationally more expensive than the default
     # experiment_type = MoreFeaturesBBTExperiment()
     # or
     # experiment_type = MoreFeaturesBFExperiment()
+    # Accio is too large for our memory, but you can implement it in the same way if you want to try.
 
     meta_experiment = experiment_type.next_experiment()
     wcp = None
