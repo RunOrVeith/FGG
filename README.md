@@ -17,7 +17,12 @@
     ```
     pip install -r FGG/requirements.txt
     ```
-4. Get input datasets (from vivek.sharma@kit.edu?)
+4. Get input datasets (from vivek.sharma@kit.edu?).
+Put them inside this repository in a folder named "data".
+There should be a subfolder for each dataset named after it, e.g. "bbt".
+Inside each of them there should be a subfolder for each episode, e.g. "bbt/bbt0101/tracks.mat".
+Alternatively you can change the paths in `FGG/dataset/input_data.py` within each dataset.
+
 
 5. Optional: Download [pretrained weights](https://drive.google.com/uc?export=download&id=1VkFMpiMkYI1_SpBQ05EQjB0Y2P7vYdgr) 
     (About 650 MB unzipped). Unzip them inside the repository so they will be automatically found.
@@ -75,14 +80,8 @@ The files are of type HDF5 and follow the following format:
     
 ## Instructions
 
-To obtain the input data matrices for BBT, BF or ACCIO please contact vivek.sharma@kit.edu.
-Put them inside this repository in a folder named "data".
-There should be a subfolder for each dataset named "bf", "bbt" and "accio".
-Inside each of them there should be a subfolder for each episode, e.g. bbt/bbt0101/tracks.mat (except in accio).
-Alternatively you can change the paths in `FGG/dataset/input_data.py`.
 
-
-__Expected input__:
+__Expected input format__ :
 We expect the inputs to be in a HDF5 file.
 The following structure is assumed:
 
@@ -100,7 +99,7 @@ The code is organized into separate components.
 The input data is represented by an `InputData` class.
 If you want to run on your own dataset, you need to subclass `InputData`.
 You can change the expected names for the HDF5 datasets easily if required, see
-`FGG/dataset/input_data.py.Accio` for an example.
+`class::FGG/dataset/input_data.py.Accio` for an example.
 
 This has been done for BBT, BF and ACCIO. 
 You can use those as an example.
