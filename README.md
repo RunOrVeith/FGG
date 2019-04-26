@@ -66,9 +66,15 @@ Their clustering performance is:
 - Bf0505: 96.44% WCP
 - Bf0506: 96.51% WCP
 
-The files are of type HDF5 and follow the following format:
 
+__Output format__:
+The files are of type HDF5 and follow the following format:
+You can read them with h5py.
 - Dataset "FGG_features": These are the output features of shape `|V|x128`.
+V is the number of nodes in the graph and depends on the input size track length.
+We split tracks into sub-tracks once they reach a certain length.
+For example on Buffy Episode 6, `V=3176` for `535` full tracks.
+Please see the paper for details.
 - Group "Tracks": Contains the following  datasets. Each dataset has `|V|` rows.
     - "tracker_id": The id of the tracker to which the features belong.
     - "label": The ground-truth label. If you run  FGG on a dataset where there are no labels, this will be missing in the output file.
@@ -85,7 +91,7 @@ __Expected input format__ :
 We expect the inputs to be in a HDF5 file.
 The following structure is assumed:
 
-- Dataset "features_vgg": Contains the features. Should be of shape `CxFx2048` where C is the number of crops (i.e. for 10-crop C=10) and F us the number of faces. C is optional.
+- Dataset "features_vgg": Contains the features. Should be of shape `2048xFxC` where C is the number of crops (i.e. for 10-crop C=10) and F us the number of faces. C is optional.
 - Group "Tracks": Contains the following groups. Each group contains a dataset with the content for each track.
     - "trackerId": The id of the tracker to which the features belong.
     - "label": The ground-truth label.
@@ -124,6 +130,12 @@ To train please subclass `Experiment` and change whatever you need.
 For each dataset you should at least specify `episode_index_train`.
 By default an evaluation step will be performed on the same episode when training is done.
 
+The default setting is to train on BBT0101, call it with
+```
+python train.py
+```
+There also exists a predefined experiment type for the other datasets.
+
 The following output files will be created:
 
 - In `experiment_results/` you will find a file `[Experiment name].csv` listing all the outputs, and any changes of the model you might have recorded.
@@ -141,6 +153,15 @@ The `EvalExperiment` subclass is provided for convenience to allow to only evalu
 without any further training.
 There are several evaluation experiments implemented in `evaluate.py`.
 Only the experiment csv, features.h5, run_info.json and possibly the replay_log will be saved.
+
+The default setting is to evaluate on all episodes of BBT, call it with
+```
+python evaluate.py
+```
+
+If you want to produce the output features with one feature per 10 tracks,
+change the exeriment type in `evaluate.py`.
+Please also see the comments in the code.
 
 ### Inference
 

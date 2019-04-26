@@ -69,6 +69,32 @@ class EvaluateBBTBFExperiment(EvalExperiment):
         return super().modify_config(config, i)
 
 
+class EvaluateBBTExperiment(EvalExperiment):
+
+    def __init__(self):
+        """
+        Perform one evaluation step on all episodes of BBT using pretrained weights.
+        """
+        super().__init__(num_runs=6)
+
+    def modify_config(self, config: FaceGroupingConfig, i):
+        config.dataset = BigBangTheory(episode_index_test=i)
+        return super().modify_config(config, i)
+
+
+class EvaluateBFExperiment(EvalExperiment):
+
+    def __init__(self):
+        """
+        Perform one evaluation step on all episodes of BF using pretrained weights.
+        """
+        super().__init__(num_runs=6)
+
+    def modify_config(self, config: FaceGroupingConfig, i):
+        config.dataset = Buffy(episode_index_test=i)
+        return super().modify_config(config, i)
+
+
 class EvaluateAccioExperiment(EvalExperiment):
     """
     Perform one evaluation step on ACCIO using pretrained weights.
@@ -126,7 +152,21 @@ if __name__ == '__main__':
     from FGG.persistence.run_configuration import enable_auto_run_save
 
     enable_auto_run_save()
-    experiment_type = MoreFeaturesBFExperiment()
+    # Evaluate on all episodes of BBT:
+    experiment_type = EvaluateBBTExperiment()
+    # Evaluate on all episodes of BF:
+    # experiment_type = EvaluateBFExperiment()
+    # EValuate on all episodes of BBT and BF:
+    # experiment_type = EvaluateBBTBFExperiment()
+
+    # -------------------------------------------------
+    # If you want a reliable number of features, run this:
+    # It will extract a feature for every ten frames.
+    # Warning: This is computationally more expensive than the default
+    # experiment_type = MoreFeaturesBBTExperiment()
+    # or
+    # experiment_type = MoreFeaturesBFExperiment()
+
     meta_experiment = experiment_type.next_experiment()
     wcp = None
     while True:

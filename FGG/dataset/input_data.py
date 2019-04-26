@@ -162,6 +162,11 @@ class BigBangTheory(InputData):
 
     @staticmethod
     def main_characters():
+        # If you want to include more characters, you just add them here as they appear in the labels,
+        # e.g. ["penny", "howard", "leonard", "sheldon", "raj", "kurt"]
+        # Then the tracks from kurt will also be picked up both during training and evaluation.
+        # You don't have to retrain with new characters, but the performance will be lower (more so on Buffy),
+        # because the default weights have been trained on the main characters only.
         return ["penny", "howard", "leonard", "sheldon", "raj"]
 
 

@@ -94,6 +94,28 @@ class BF0502BBT0101Experiment(Experiment):
         return super().modify_config(config, i)
 
 
+class BBTExperiment(Experiment):
+
+    def __init__(self):
+        self.bbt = BigBangTheory()
+        super().__init__(header=(), num_runs=5)
+
+    def modify_config(self, config: FaceGroupingConfig, i):
+        config.dataset = self.bbt
+        return super().create_model_name(config, i)
+
+
+class BFExperiment(Experiment):
+
+    def __init__(self):
+        self.bf = Buffy()
+        super().__init__(header=(), num_runs=5)
+
+    def modify_config(self, config: FaceGroupingConfig, i):
+        config.dataset = self.bf
+        return super().create_model_name(config, i)
+
+
 class AccioExperiment(Experiment):
 
     def __init__(self):
@@ -131,7 +153,12 @@ if __name__ == '__main__':
     from FGG.persistence.run_configuration import enable_auto_run_save
 
     enable_auto_run_save()
-    experiment_type = BF0502BBT0101Experiment()
+    # If you want to train on BBT, uncomment:
+    experiment_type = BBTExperiment()
+    # If you want to train on BF, uncomment:
+    #experiment_type = BFExperiment()
+    # You can also train both after each other automatically:
+    # experiment_type = BF0502BBT0101Experiment()
     meta_experiment = experiment_type.next_experiment()
     wcp = None
     while True:
