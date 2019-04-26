@@ -41,8 +41,25 @@
 ## Features
 
 You can download the FGG features for the main characters of [BF](https://drive.google.com/uc?export=download&id=1QAjeSEAEMP4vgmbj42ypFPYwqK_lxP1n), [BBT](https://drive.google.com/uc?export=download&id=1zG6J_cUsIZGm8DVqlPYo6e9sGnlHMwnf) and [Accio](https://drive.google.com/uc?export=download&id=1yhtipY3l1U-geSSqk2ikgIg0M6ZmrMEK).
+These are the output features for the weights above.
 Please keep in mind that the output dimension is not the same as the input dimension (i.e. there are less FGG features)
 due to the sub-track representation.
+
+Additionally, you can download another set of features for the main characters([BF](https://drive.google.com/uc?export=download&id=1Lok3O2oZhA5zdLeivpccROZREU9fAiGW),[BBT](https://drive.google.com/uc?export=download&id=1p_6kJCWMtANSk_LnHgFACjV6TESIfBr8)).
+These are trained so that there is one feature for every 10 frames in each track, e.g. a track with 27 faces results in 3 features.
+Their clustering performance is:
+- BBT0101: 99.50% WCP
+- BBT0102: 98.16% WCP
+- BBT0103: 99.42% WCP
+- BBT0104: 99.02% WCP
+- BBT0105: 99.26% WCP
+- BBT0106: 93.44% WCP
+- Bf0501: 96.67% WCP
+- Bf0502: 97.01% WCP
+- Bf0503: 97.96% WCP
+- Bf0504: 91.59% WCP
+- Bf0505: 96.44% WCP
+- Bf0506: 96.51% WCP
 
 The files are of type HDF5 and follow the following format:
 
